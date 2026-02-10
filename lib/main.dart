@@ -28,16 +28,19 @@ class _MyAppState extends State<MyApp> {
 
     return MaterialApp(
       title: 'Momentime',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
       home: Scaffold(
         appBar: AppBar(
+          /*
           title: [
             Text("Calendar"),
             Text("Groups"),
             Text("Settings")
           ][currentIndex],
+          */
         ),
         body: [
           CalendarPage(),

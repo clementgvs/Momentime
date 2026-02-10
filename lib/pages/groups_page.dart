@@ -10,6 +10,20 @@ class GroupsPage extends StatefulWidget {
 class _GroupsPageState extends State<GroupsPage> {
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Center(
+      child: Stack(
+        children: [
+          Text("Calendar"),
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: FloatingActionButton(
+              onPressed: () => print("Bouton cliqué !"),
+              child: Icon(Icons.add),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
