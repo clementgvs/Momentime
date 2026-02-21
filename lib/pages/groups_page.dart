@@ -13,15 +13,7 @@ class _GroupsPageState extends State<GroupsPage> {
     return Center(
       child: Stack(
         children: [
-          Text("Calendar"),
-          Positioned(
-            bottom: 16,
-            right: 16,
-            child: FloatingActionButton(
-              onPressed: () => print("Bouton cliqué !"),
-              child: Icon(Icons.add),
-            ),
-          ),
+          Text("Groups"),
         ],
       ),
     );

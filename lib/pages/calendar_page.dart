@@ -89,7 +89,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   alignment: Alignment.center,
                   title: Text('Ajouter un évènement'),
                   content: SingleChildScrollView(
-                    padding: EdgeInsetsGeometry.all(40),
+                    padding: EdgeInsetsGeometry.all(40),  
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
