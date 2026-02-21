@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:momentime/events_manager.dart';
 import 'package:momentime/models/event.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
@@ -11,9 +12,19 @@ class CalendarPage extends StatefulWidget {
 
 class _CalendarPageState extends State<CalendarPage> {
   late Event event;
+  List<Event> events = [];
 
   void addEvent(BuildContext context, Event event){
     print("Add event : \n${event.toString()}");
+    setState(() {
+      events.add(event);
+    });
+    event = Event("EventName",
+        DateTime.now(),
+        DateTime.now().add(Duration(hours: 1)),
+        Color.fromRGBO(255, 0, 0, 1),
+        false);
+    //Add event to online DB
     Navigator.pop(context);
   }
 
@@ -28,7 +39,7 @@ class _CalendarPageState extends State<CalendarPage> {
 
     final TimeOfDay? time = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay(hour: 9, minute: 0),
+      initialTime: TimeOfDay.now(),
     );
     if (time == null) return;
 
@@ -43,11 +54,12 @@ class _CalendarPageState extends State<CalendarPage> {
 
   @override
   void initState() {
-    event = Event("EventName", 
+    event = Event("EventName",  
     DateTime.now(), 
-    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day, DateTime.now().hour+2, DateTime.now().minute), 
+    DateTime.now().add(Duration(hours: 1)),
     Color.fromRGBO(255, 0, 0, 1), 
     false);
+    //Fetch online DB for events
     super.initState();
   }
 
@@ -64,7 +76,7 @@ class _CalendarPageState extends State<CalendarPage> {
             child: SfCalendar(
               view: CalendarView.month,
               monthViewSettings: MonthViewSettings(showAgenda: true),
-              //dataSource: ,
+              dataSource: EventsManager(events),
             ), 
           ),
           Positioned(
@@ -77,7 +89,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   alignment: Alignment.center,
                   title: Text('Ajouter un évènement'),
                   content: SingleChildScrollView(
-                    padding: EdgeInsetsGeometry.all(20),
+                    padding: EdgeInsetsGeometry.all(40),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -89,6 +101,9 @@ class _CalendarPageState extends State<CalendarPage> {
                           minLines: 1,
                           onSubmitted: (value) => setState(() => event.setName(value)),
                           onChanged: (value) => setState(() => event.setName(value)),
+                          decoration: InputDecoration(
+                            hintText: 'Enter the event name',
+                          ),
                         ),
                         TextButton(
                           onPressed: () => pickDateTime(context, true),
@@ -99,13 +114,11 @@ class _CalendarPageState extends State<CalendarPage> {
                           child: Text("Select end date"),
                         ),
                         Switch(
-                          value: isAllDay, // Assurez-vous que cette variable change !
-                          onChanged: (newValue) {
-                            setState(() {
-                              isAllDay = newValue; // On met à jour la variable locale
-                              event.setIsAllDay(newValue); // On met à jour l'objet métier
-                            });
-                          },
+                          value: isAllDay, 
+                          onChanged: (newValue) => setState(() {
+                            isAllDay = newValue; 
+                            event.setIsAllDay(newValue); 
+                          }),
                         ),
                       ],
                     ),
@@ -122,6 +135,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   ],
                 ),
               ),
+              shape: CircleBorder(),
               child: Icon(Icons.add),
             ),
           ),

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "633608349785",
+    "project_id": "momentime-main",
+    "storage_bucket": "momentime-main.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:633608349785:android:ffa0a8c6498f4774f5a948",
+        "android_client_info": {
+          "package_name": "fr.clementgvs.momentime"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQZMMhU4Ioyq0uRFFg8ytOfdETqxDCEZk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
