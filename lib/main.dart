@@ -31,7 +31,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-
+    //AccountManager().signOut();
     return MaterialApp(
       title: 'Momentime',
       debugShowCheckedModeBanner: false,

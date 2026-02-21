@@ -1,8 +1,13 @@
+import 'dart:ui';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:momentime/models/event.dart';
 
 class DatabaseManager {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instanceFor(
+      app: Firebase.app(),
+      databaseId: 'main');
 
   Future<void> addEvent(String userUid, Event event) {
     return _db.collection('users').doc(userUid).collection('events').add({
@@ -12,6 +17,31 @@ class DatabaseManager {
       'color': event.background.toARGB32().toRadixString(16).padLeft(8, '0').substring(2),
       'isAllDay': event.isAllDay,
     });
+  }
+
+  Future<List<Event>> getEventList(String userUid) async {
+    try {
+      QuerySnapshot snapshot = await _db
+          .collection("users")
+          .doc(userUid)
+          .collection("events")
+          .get();
+
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+
+        return Event(
+          data['name'] ?? 'Sans nom',
+          (data['start'] as Timestamp).toDate(),
+          (data['end'] as Timestamp).toDate(),
+          Color(int.parse("FF${data['color']}", radix: 16)), // Ajoute FF pour l'opacité
+          data['isAllDay'] ?? false,
+        );
+      }).toList();
+    } catch (e) {
+      print("Erreur récupération events : $e");
+      return [];
+    }
   }
 
   Future<void> removeEvent(String userUid, String eventId) {

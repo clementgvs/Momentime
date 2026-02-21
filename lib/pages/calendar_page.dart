@@ -1,4 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:momentime/account_manager.dart';
+import 'package:momentime/database_manager.dart';
 import 'package:momentime/events_manager.dart';
 import 'package:momentime/models/event.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
@@ -14,18 +17,23 @@ class _CalendarPageState extends State<CalendarPage> {
   late Event event;
   List<Event> events = [];
 
-  void addEvent(BuildContext context, Event event){
+  Future<void> addEvent(BuildContext context, Event event) async {
     print("Add event : \n${event.toString()}");
+
+    Navigator.pop(context);
+
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    DatabaseManager().addEvent(currentUser!.uid, event);
+
     setState(() {
       events.add(event);
     });
+
     event = Event("EventName",
         DateTime.now(),
         DateTime.now().add(Duration(hours: 1)),
         Color.fromRGBO(255, 0, 0, 1),
         false);
-    //Add event to online DB
-    Navigator.pop(context);
   }
 
   Future<void> pickDateTime(BuildContext context, bool endOrStart) async {
@@ -50,7 +58,16 @@ class _CalendarPageState extends State<CalendarPage> {
         event.setTo(DateTime(date.year, date.month, date.day, time.hour, time.minute));
       }
     });
-  }   
+  }
+
+  Future<void> _loadEvents() async {
+    String uid = FirebaseAuth.instance.currentUser!.uid;
+    List<Event> fetchedEvents = await DatabaseManager().getEventList(uid);
+
+    setState(() {
+      events = fetchedEvents;
+    });
+  }
 
   @override
   void initState() {
@@ -59,12 +76,15 @@ class _CalendarPageState extends State<CalendarPage> {
     DateTime.now().add(Duration(hours: 1)),
     Color.fromRGBO(255, 0, 0, 1), 
     false);
-    //Fetch online DB for events
+
+    _loadEvents();
+
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    double height = MediaQuery.sizeOf(context).height;
     TextEditingController eventNameController = TextEditingController();
     bool isAllDay = false;
 
@@ -75,9 +95,13 @@ class _CalendarPageState extends State<CalendarPage> {
             padding: EdgeInsetsGeometry.directional(start: 15, end: 15, bottom: 0, top: 0),
             child: SfCalendar(
               view: CalendarView.month,
-              monthViewSettings: MonthViewSettings(showAgenda: true),
+              monthViewSettings: MonthViewSettings(
+                showAgenda: true,
+                agendaViewHeight: height/4,
+                agendaItemHeight: height/16,
+              ),
               dataSource: EventsManager(events),
-            ), 
+            ),
           ),
           Positioned(
             bottom: 16,
