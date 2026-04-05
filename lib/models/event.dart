@@ -1,8 +1,8 @@
 import 'dart:ui';
 
 class Event{
-  Event(this.name, this.from, this.to, this.background, this.isAllDay);
-
+  Event(this.id, this.name, this.from, this.to, this.background, this.isAllDay);
+  String id;
   String name;
   DateTime from;
   DateTime to;
@@ -12,6 +12,7 @@ class Event{
   @override
   String toString() {
     return """
+    ID : $id,
     Name : $name,
     From : ${from.toString()},
     To : ${to.toString()},
@@ -19,6 +20,10 @@ class Event{
     AllDay ? : $isAllDay
     """
     ;
+  }
+
+  void setId(String id){
+    this.id = id;
   }
 
   void setName(String nName){

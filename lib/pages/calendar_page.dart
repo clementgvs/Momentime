@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:momentime/account_manager.dart';
-import 'package:momentime/database_manager.dart';
-import 'package:momentime/events_manager.dart';
+import 'package:momentime/backend/account_manager.dart';
+import 'package:momentime/backend/database_manager.dart';
+import 'package:momentime/backend/events_manager.dart';
 import 'package:momentime/models/event.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
@@ -16,24 +16,24 @@ class CalendarPage extends StatefulWidget {
 class _CalendarPageState extends State<CalendarPage> {
   late Event event;
   List<Event> events = [];
+  User? currentUser = FirebaseAuth.instance.currentUser;
 
   Future<void> addEvent(BuildContext context, Event event) async {
     print("Add event : \n${event.toString()}");
 
     Navigator.pop(context);
 
-    User? currentUser = FirebaseAuth.instance.currentUser;
-    DatabaseManager().addEvent(currentUser!.uid, event);
+    await DatabaseManager().addEvent(currentUser!.uid, event);
 
-    setState(() {
-      events.add(event);
-    });
-
-    event = Event("EventName",
+    event = Event(
+        "0",
+        "EventName",
         DateTime.now(),
         DateTime.now().add(Duration(hours: 1)),
         Color.fromRGBO(255, 0, 0, 1),
-        false);
+        false
+    );
+    _loadEvents();
   }
 
   Future<void> pickDateTime(BuildContext context, bool endOrStart) async {
@@ -71,12 +71,14 @@ class _CalendarPageState extends State<CalendarPage> {
 
   @override
   void initState() {
-    event = Event("EventName",  
-    DateTime.now(), 
-    DateTime.now().add(Duration(hours: 1)),
-    Color.fromRGBO(255, 0, 0, 1), 
-    false);
-
+    event = Event(
+      "0",
+      "EventName",
+      DateTime.now(),
+      DateTime.now().add(Duration(hours: 1)),
+      Color.fromRGBO(255, 0, 0, 1),
+      false
+    );
     _loadEvents();
 
     super.initState();
@@ -101,6 +103,56 @@ class _CalendarPageState extends State<CalendarPage> {
                 agendaItemHeight: height/16,
               ),
               dataSource: EventsManager(events),
+              appointmentBuilder: (BuildContext context, CalendarAppointmentDetails details) {
+                final Event event = details.appointments.first;
+
+                return Container(
+                  decoration: BoxDecoration(
+                    color: event.background.withOpacity(0.75),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.white, width: 0.5), // Bordure plus fine pour le mobile
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              event.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () async {
+                              await DatabaseManager().removeEvent(currentUser!.uid, event.id);
+                              _loadEvents();
+                            },
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Expanded(child: SizedBox(height: 2)),
+                      Text(
+                        "${event.from.toString().split('.')[0]} >>> ${event.to.toString().split('.')[0]}",
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
           Positioned(

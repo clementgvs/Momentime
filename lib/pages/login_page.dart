@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:momentime/account_manager.dart';
+import 'package:momentime/backend/account_manager.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,87 +17,93 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return isLogin ? Scaffold(
-      body: Column(
-        children: [
-          SizedBox(
-            width: 0,
-            height: 100,
-          ),
-          TextField(
-            onChanged: (value) => setState(() => email=value),
-            decoration: InputDecoration(
-              hintText: 'E-mail',
+      body: Padding(
+        padding: EdgeInsetsGeometry.all(40),
+        child: Column(
+          children: [
+            SizedBox(
+              width: 0,
+              height: 100,
             ),
-          ),
-          TextField(
-            onChanged: (value) => setState(() => password=value),
-            obscureText: true,
-            decoration: InputDecoration(
-              hintText: 'Password',
+            TextField(
+              onChanged: (value) => setState(() => email=value),
+              decoration: InputDecoration(
+                hintText: 'E-mail',
+              ),
             ),
-          ),
-          TextButton(
-            onPressed: () => AccountManager().signIn(email, password),
-            child: Text("Login")
-          ),
-          TextButton(
-            onPressed: () => setState(() {
-              isLogin=!isLogin;
-            }),
-            child: Text("Créer un compte")
-          ),
-        ],
+            TextField(
+              onChanged: (value) => setState(() => password=value),
+              obscureText: true,
+              decoration: InputDecoration(
+                hintText: 'Password',
+              ),
+            ),
+            TextButton(
+                onPressed: () => AccountManager().signIn(email, password),
+                child: Text("Login")
+            ),
+            TextButton(
+                onPressed: () => setState(() {
+                  isLogin=!isLogin;
+                }),
+                child: Text("Créer un compte")
+            ),
+          ],
+        ),
       ),
     )
     :
     Scaffold(
-      body: Column(
-        children: [
-          SizedBox(
-            width: 0,
-            height: 100,
-          ),
-          TextField(
-            onChanged: (value) => setState(() => username=value),
-            decoration: InputDecoration(
-              hintText: 'Username',
+      body: Padding(
+        padding: EdgeInsetsGeometry.all(40),
+        child: Column(
+          children: [
+            SizedBox(
+              width: 0,
+              height: 100,
             ),
-          ),
-          TextField(
-            decoration: InputDecoration(
-              hintText: 'E-mail',
+            TextField(
+              onChanged: (value) => setState(() => username=value),
+              decoration: InputDecoration(
+                hintText: 'Username',
+              ),
             ),
-          ),
-          TextField(
-            onChanged: (value) => setState(() => email=value),
-            decoration: InputDecoration(
-              hintText: 'Confirm E-mail',
+            TextField(
+              decoration: InputDecoration(
+                hintText: 'E-mail',
+              ),
             ),
-          ),
-          TextField(
-            obscureText: true,
-            decoration: InputDecoration(
-              hintText: 'Password',
+            TextField(
+              onChanged: (value) => setState(() => email=value),
+              decoration: InputDecoration(
+                hintText: 'Confirm E-mail',
+              ),
             ),
-          ),
-          TextField(
-            onChanged: (value) => setState(() => password=value),
-            obscureText: true,
-            decoration: InputDecoration(
-              hintText: 'Confirm password',
+            TextField(
+              obscureText: true,
+              decoration: InputDecoration(
+                hintText: 'Password',
+              ),
             ),
-          ),
-          TextButton(
-            onPressed: () => AccountManager().signUp(email=email, password=password, username=username),
-            child: Text("Register")
-          ),
-          TextButton(
-            onPressed: () => setState(() {
-              isLogin=!isLogin;
-            }),
-            child: Text("Déjà un compte ? Se connecter !")
-          ),
-        ],
+            TextField(
+              onChanged: (value) => setState(() => password=value),
+              obscureText: true,
+              decoration: InputDecoration(
+                hintText: 'Confirm password',
+              ),
+            ),
+            TextButton(
+                onPressed: () => AccountManager().signUp(email=email, password=password, username=username),
+                child: Text("Register")
+            ),
+            TextButton(
+                onPressed: () => setState(() {
+                  isLogin=!isLogin;
+                }),
+                child: Text("Déjà un compte ? Se connecter !")
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,39 +1,37 @@
-import 'dart:ui';
+import 'package:flutter/cupertino.dart';
+import 'package:momentime/models/message.dart';
 
 class Group{
-  Group(this.name, this.from, this.to, this.background, this.isAllDay);
-
+  Group(this.id, this.name, this.members, this.messages);
+  String id;
   String name;
-  DateTime from;
-  DateTime to;
-  Color background;
-  bool isAllDay;
+  List<String> members;
+  List<Message> messages;
 
   @override
   String toString() {
     return """
+    ID: $id,
     Name : $name,
-    From : ${from.toString()},
-    To : ${to.toString()},
-    Color : ${background.toString()},
-    AllDay ? : $isAllDay
+    Members : ${members.toString()}
+    Messages : ${messages.toString()}
     """
     ;
   }
 
-  void setName(String nName){
-    name = nName;
+  void setId(String id){
+    this.id = id;
   }
 
-  void setFrom(DateTime nfrom){
-    from = nfrom;
+  void setName(String name){
+    this.name = name;
   }
 
-  void setTo(DateTime nto){
-    to = nto;
+  void setMembers(List<String> members){
+    this.members = members;
   }
 
-  void setIsAllDay(bool nIsAllDay){
-    isAllDay = nIsAllDay;
+  void setMessages(List<Message> messages){
+    this.messages = messages;
   }
 }

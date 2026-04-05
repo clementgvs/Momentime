@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:momentime/account_manager.dart';
+import 'package:momentime/backend/account_manager.dart';
 import 'package:momentime/pages/calendar_page.dart';
 import 'package:momentime/pages/groups_page.dart';
 import 'package:momentime/pages/login_page.dart';

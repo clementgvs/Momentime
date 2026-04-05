@@ -41,4 +41,28 @@ class AccountManager {
       return "Utilisateur introuvable";
     }
   }
+
+  bool listContainsIgnoreCase(List<String>? list, String s) {
+    return list!.any(
+          (element) => element.toLowerCase().contains(s.toLowerCase()),
+    );
+  }
+
+  Future<List<String>> searchUsersFromUsername(String search) async {
+    List<String> ids = List.empty(growable: true);
+    try {
+      final querySnapshot = await _db
+          .collection('users')
+          .where('username', isGreaterThanOrEqualTo: search)
+          .where('username', isLessThanOrEqualTo: '$search\uf8ff')
+          .get();
+
+      for (var doc in querySnapshot.docs) {
+        ids.add(doc.id);
+      }
+    } catch (e) {
+      print("Erreur lors de la recherche : $e");
+    }
+    return ids;
+  }
 }
