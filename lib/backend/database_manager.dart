@@ -3,6 +3,9 @@ import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:momentime/models/event.dart';
+import 'package:momentime/models/group.dart';
+
+import 'models/message.dart';
 
 class DatabaseManager {
   final FirebaseFirestore _db = FirebaseFirestore.instanceFor(
@@ -48,6 +51,58 @@ class DatabaseManager {
     return _db.collection('users').doc(userUid).collection('events').doc(eventId).delete();
   }
 
+  Future<List<Group>> getGroupList(String userUid) async {
+    try {
+      // 1. Récupérer les IDs des groupes dans le document User
+      DocumentSnapshot userDoc = await _db.collection('users').doc(userUid).get();
+
+      if (!userDoc.exists) return [];
+
+      List<dynamic> groupIds = userDoc.get('groups') ?? [];
+      if (groupIds.isEmpty) return [];
+
+      // 2. Récupérer les détails des groupes (Nom et Membres)
+      QuerySnapshot groupSnapshots = await _db.collection('groups')
+          .where(FieldPath.documentId, whereIn: groupIds)
+          .get();
+
+      // 3. Transformer en liste d'objets Group
+      // On laisse la liste des messages vide au début (on les chargera quand on clique sur le groupe)
+      return groupSnapshots.docs.map((doc) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+        return Group(
+          data['name'] ?? 'Sans nom',
+          List<String>.from(data['members'] ?? []),
+          [], // La liste de Message est initialisée vide
+        );
+      }).toList();
+
+    } catch (e) {
+      print("Erreur lors de la récupération des objets Group : $e");
+      return [];
+    }
+  }
+
+  Future<List<Message>> getGroupMessages(String groupId) async {
+    QuerySnapshot msgSnapshot = await _db
+        .collection('groups')
+        .doc(groupId)
+        .collection('messages')
+        .orderBy('timestamp', descending: true)
+        .get();
+
+    return msgSnapshot.docs.map((doc) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      return Message(
+        // Adapte ici selon les paramètres de ton constructeur Message
+        data['text'],
+        data['senderId'],
+        (data['timestamp'] as Timestamp),
+      );
+    }).toList();
+  }
+
   Future<void> createGroup(String groupName, String creatorUid) async {
     DocumentReference groupRef = await _db.collection('groups').add({
       'name': groupName,
@@ -91,7 +146,7 @@ class DatabaseManager {
     return _db.collection('groups').doc(groupId).collection('messages').add({
       'senderId': senderId,
       'text': text,
-      'timestamp': FieldValue.serverTimestamp(),
+      'timestamp': FieldValue.serverTimestamp() ,
     });
   }
 }

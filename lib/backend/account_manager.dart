@@ -6,7 +6,8 @@ class AccountManager {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instanceFor(
       app: Firebase.app(),
-      databaseId: 'main');
+      databaseId: 'main'
+  );
 
   Stream<User?> get userStatus => _auth.authStateChanges();
 
@@ -31,4 +32,13 @@ class AccountManager {
   }
 
   Future<void> signOut() => _auth.signOut();
+
+  Future<String> getUsernameFromId(String id) async {
+    DocumentSnapshot doc = await _db.collection("users").doc(id).get();
+    if (doc.exists) {
+      return doc.get("username") as String;
+    } else {
+      return "Utilisateur introuvable";
+    }
+  }
 }
