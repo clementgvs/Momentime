@@ -281,12 +281,24 @@ class _GroupPageState extends State<GroupPage> {
                                 leading: CircleAvatar(child: Text(username[0])),
                                 title: Text(username),
                                 onTap: () {
-                                  // Ajoute l'ID à ta liste locale 'idsToAdd'
-                                  if(!idsToAdd.contains(userId)) {
+                                  if (idsToAdd.contains(userId)) {
+                                    idsToAdd.remove(userId);
+                                  } else {
                                     idsToAdd.add(userId);
                                   }
-                                  print("Ajouté à la file d'attente : $username");
+                                  setState(() {});
                                 },
+                                trailing: Checkbox(
+                                  value: idsToAdd.contains(userId),
+                                  onChanged: (bool? checked) {
+                                    if (checked == true) {
+                                      idsToAdd.add(userId);
+                                    } else {
+                                      idsToAdd.remove(userId);
+                                    }
+                                    setState(() {});
+                                  },
+                                ),
                               );
                             },
                           ),
@@ -299,8 +311,11 @@ class _GroupPageState extends State<GroupPage> {
                       onPressed: () async {
                         Navigator.pop(context, true);
                         for(String id in idsToAdd) {
-                          await DatabaseManager().addUserToGroup(widget.group.id, id);
+                          if(!widget.group.members.contains(id)) {
+                            await DatabaseManager().addUserToGroup(widget.group.id, id);
+                          }
                         }
+                        await DatabaseManager().getGroupList(FirebaseAuth.instance.currentUser!.uid);
                         setState(() {});
                       },
                       child: Text('Add'),
