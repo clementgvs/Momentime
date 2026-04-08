@@ -10,10 +10,11 @@ class Message{
   @override
   String toString() {
     return """
-    ID : $id,
-    Sender ID : $senderId,
-    Text : $text,
-    Timestamp : ${timestamp.toString()}
+    Message : 
+      ID : $id,
+      Sender ID : $senderId,
+      Text : $text,
+      Timestamp : ${timestamp.toString()}
     """
     ;
   }

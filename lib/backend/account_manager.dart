@@ -34,6 +34,7 @@ class AccountManager {
   Future<void> signOut() => _auth.signOut();
 
   Future<String> getUsernameFromId(String id) async {
+    if(id == "system") return "System";
     DocumentSnapshot doc = await _db.collection("users").doc(id).get();
     if (doc.exists) {
       return doc.get("username") as String;
@@ -48,19 +49,28 @@ class AccountManager {
     );
   }
 
-  Future<List<String>> searchUsersFromUsername(String search) async {
-    List<String> ids = List.empty(growable: true);
+  Future<Map<String, String>> searchUsersFromUsername(String search) async {
+    Map<String, String> ids = {};
     try {
-      final querySnapshot = await _db
-          .collection('users')
-          .where('username', isGreaterThanOrEqualTo: search)
-          .where('username', isLessThanOrEqualTo: '$search\uf8ff')
-          .get();
+      dynamic querySnapshot;
+      if(search.isEmpty) {
+        querySnapshot = await _db
+            .collection('users')
+            .where('username', isNull: false)
+            .get();
+      }else {
+        querySnapshot = await _db
+            .collection('users')
+            .where('username', isGreaterThanOrEqualTo: search)
+            .where('username', isLessThanOrEqualTo: '$search\uf8ff')
+            .get();
+      }
 
       for (var doc in querySnapshot.docs) {
-        ids.add(doc.id);
+        ids.putIfAbsent(doc.id, () => doc.get("username"));
       }
     } catch (e) {
+      print(search);
       print("Erreur lors de la recherche : $e");
     }
     return ids;

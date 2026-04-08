@@ -1,10 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:momentime/backend/database_manager.dart';
 import 'package:momentime/models/group.dart';
 import 'package:momentime/models/message.dart';
-import 'package:momentime/pages/groups_page.dart';
 
 import '../backend/account_manager.dart';
 
@@ -25,12 +23,18 @@ class _GroupPageState extends State<GroupPage> {
     return Scaffold(
       // --- 1. BARRE DU HAUT ---
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context, true);
+          },
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(widget.group.name),
             Text(
-              "${widget.group.members.length} membres",
+              widget.group.members.length>1 ? "${widget.group.members.length} members" : "${widget.group.members.length} member",
               style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
@@ -60,13 +64,12 @@ class _GroupPageState extends State<GroupPage> {
           Expanded(
             child:
               widget.group.messages.isEmpty ?
-              const Center(child: Text("Aucun message pour le moment")) :
+              const Center(child: Text("No message for the moment.")) :
               ListView.builder(
               reverse: true, // Pour que les derniers messages soient en bas
               itemCount: widget.group.messages.length,
               itemBuilder: (context, index) {
-                // On inverse l'index à cause du 'reverse: true'
-                final msg = widget.group.messages.reversed.toList()[index];
+                final msg = widget.group.messages.toList()[index];
                 return _buildMessageBubble(msg);
               },
             ),
@@ -94,7 +97,7 @@ class _GroupPageState extends State<GroupPage> {
               child: TextField(
                 controller: _messageController,
                 decoration: const InputDecoration(
-                  hintText: "Envoyer un message...",
+                  hintText: "Send a message...",
                   border: InputBorder.none,
                 ),
               ),
@@ -105,10 +108,11 @@ class _GroupPageState extends State<GroupPage> {
                 if (_messageController.text.isNotEmpty) {
                   print("Envoi de : ${_messageController.text}");
                   await DatabaseManager().sendMessage(widget.group.id, FirebaseAuth.instance.currentUser!.uid, _messageController.text);
-                  setState(() {
-                    widget.group.messages.add(Message("0", FirebaseAuth.instance.currentUser!.uid, _messageController.text, Timestamp.fromDate(DateTime.now())));
-                    _messageController.clear();
-                  });
+                  //widget.group.messages.add(Message("0", FirebaseAuth.instance.currentUser!.uid, _messageController.text, Timestamp.fromDate(DateTime.now())));
+                  _messageController.clear();
+
+                  widget.group.messages = await DatabaseManager().getGroupMessages(widget.group.id);
+                  setState(() {});
                 }
               },
             ),
@@ -167,21 +171,8 @@ class _GroupPageState extends State<GroupPage> {
       builder: (context) {
         return Wrap(
           children: [
-            if(message.senderId.compareTo(FirebaseAuth.instance.currentUser!.uid) == 0)
-              ListTile(
-                leading: const Icon(Icons.person_add),
-                title: const Text("Modifier"),
-                onTap: () => Navigator.pop(context), //TODO
-              ),
-              ListTile(
-                leading: const Icon(Icons.info),
-                title: const Text("Supprimer", style: TextStyle(color: Colors.red)),
-                onTap: () {
-                  DatabaseManager().deleteMessage(widget.group.id, FirebaseAuth.instance.currentUser!.uid, message.id);
-                },
-              ),
             ListTile(
-              leading: const Icon(Icons.exit_to_app, color: Colors.red),
+              leading: const Icon(Icons.info),
               title: const Text("Informations"),
               onTap: () => showDialog(
                 context: context,
@@ -194,14 +185,14 @@ class _GroupPageState extends State<GroupPage> {
                       future: fetchUsername(message.senderId),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) {
-                          return Text("Chargement de l'auteur...");
+                          return Text("Loading author...");
                         }
 
                         // On récupère le nom si disponible, sinon on garde l'ID
                         final authorName = snapshot.data ?? message.senderId;
 
                         return Text(
-                          "Auteur : $authorName\nDate : ${message.timestamp.toDate().toString()}"
+                            "Author : $authorName\nDate : ${message.timestamp.toDate().toString()}"
                         );
                       },
                     ),
@@ -209,6 +200,24 @@ class _GroupPageState extends State<GroupPage> {
                 ),
               ),
             ),
+            if(message.senderId == FirebaseAuth.instance.currentUser!.uid)
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text("Edit"),
+                onTap: () => Navigator.pop(context, true), //TODO
+              ),
+            if(message.senderId == FirebaseAuth.instance.currentUser!.uid)
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red,),
+                title: const Text("Delete", style: TextStyle(color: Colors.red)),
+                onTap: () async {
+                  Navigator.pop(context, true);
+                  await DatabaseManager().deleteMessage(widget.group.id, FirebaseAuth.instance.currentUser!.uid, message.id);
+
+                  widget.group.messages = await DatabaseManager().getGroupMessages(widget.group.id);
+                  setState(() {});
+                },
+              ),
           ],
         );
       },
@@ -216,7 +225,12 @@ class _GroupPageState extends State<GroupPage> {
   }
 
   // Fonction pour afficher le menu d'options
-  void _showGroupOptions(BuildContext context) {
+  void _showGroupOptions(BuildContext context) async {
+    TextEditingController usernameController = TextEditingController();
+    List<String> idsToAdd = List.empty(growable: true);
+    Map<String, String> searchedMap = await AccountManager().searchUsersFromUsername("");
+    List<MapEntry<String, String>> userEntries = searchedMap.entries.toList();
+
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -224,19 +238,84 @@ class _GroupPageState extends State<GroupPage> {
           children: [
             ListTile(
               leading: const Icon(Icons.person_add),
-              title: const Text("Ajouter des membres"),
-              onTap: () => showDialog(context: context, builder: (context) {
-                  return Column(
-                    children: [
+              title: const Text("Add members"),
+              onTap: () => showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Add members'),
+                  content: SizedBox( // On fixe une largeur/hauteur globale pour l'AlertDialog
+                    width: double.maxFinite,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min, // La colonne prend le minimum de place
+                      children: [
+                        TextField(
+                          controller: usernameController,
+                          onChanged: (value) async {
+                            searchedMap = await AccountManager().searchUsersFromUsername(value);
+                            setState(() {
+                              userEntries = searchedMap.entries.toList();
+                            });
+                          },
+                          decoration: const InputDecoration(hintText: 'Search a username...'),
+                        ),
+                        const SizedBox(height: 10),
+                        // On donne une hauteur fixe ou flexible à la liste de résultats
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: 250, // Hauteur max de la liste de recherche
+                          ),
+                          child: userEntries.isEmpty
+                              ? const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Text("No user found"),
+                          )
+                              : ListView.builder(
+                            shrinkWrap: true, // Important à l'intérieur d'une Column
+                            itemCount: userEntries.length,
+                            itemBuilder: (context, index) {
+                              final String userId = userEntries[index].key;
+                              final String username = userEntries[index].value;
 
-                    ],
-                  );
-                },
+                              return ListTile(
+                                dense: true, // Plus compact pour un Dialog
+                                leading: CircleAvatar(child: Text(username[0])),
+                                title: Text(username),
+                                onTap: () {
+                                  // Ajoute l'ID à ta liste locale 'idsToAdd'
+                                  if(!idsToAdd.contains(userId)) {
+                                    idsToAdd.add(userId);
+                                  }
+                                  print("Ajouté à la file d'attente : $username");
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () async {
+                        Navigator.pop(context, true);
+                        for(String id in idsToAdd) {
+                          await DatabaseManager().addUserToGroup(widget.group.id, id);
+                        }
+                        setState(() {});
+                      },
+                      child: Text('Add'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: Text('Cancel'),
+                    ),
+                  ],
+                ),
               ),
             ),
             ListTile(
               leading: const Icon(Icons.info),
-              title: const Text("Détails du groupe"),
+              title: const Text("Group details"),
               onTap: () => showDialog(
                 context: context,
                 builder: (context) {
@@ -248,10 +327,11 @@ class _GroupPageState extends State<GroupPage> {
             ),
             ListTile(
               leading: const Icon(Icons.exit_to_app, color: Colors.red),
-              title: const Text("Quitter le groupe", style: TextStyle(color: Colors.red)),
+              title: const Text("Leave group", style: TextStyle(color: Colors.red)),
               onTap: () async {
                 await DatabaseManager().leaveGroup(widget.group.id, FirebaseAuth.instance.currentUser!.uid);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => GroupsPage()));
+                Navigator.pop(context);
+                Navigator.pop(context, true);
               }
             ),
           ],

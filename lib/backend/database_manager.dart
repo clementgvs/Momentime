@@ -55,6 +55,37 @@ class DatabaseManager {
     return _db.collection('users').doc(userUid).collection('events').doc(eventId).delete();
   }
 
+  Future<void> addUserToGroup(String groupId, String userIdToAdd) async {
+    final batch = _db.batch();
+
+    try {
+      DocumentReference groupRef = _db.collection('groups').doc(groupId);
+      DocumentReference userRef = _db.collection('users').doc(userIdToAdd);
+
+      batch.update(groupRef, {
+        'members': FieldValue.arrayUnion([userIdToAdd])
+      });
+
+      batch.update(userRef, {
+        'groups': FieldValue.arrayUnion([groupId])
+      });
+
+      DocumentReference msgRef = groupRef.collection('messages').doc();
+      batch.set(msgRef, {
+        'senderId': 'system',
+        'text': 'Un nouveau membre a rejoint le groupe.',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      await batch.commit();
+      print("Utilisateur ajouté au groupe avec succès.");
+
+    } catch (e) {
+      print("Erreur lors de l'ajout de l'utilisateur : $e");
+      rethrow;
+    }
+  }
+
   Future<List<Group>> getGroupList(String userUid) async {
     try {
       // 1. Récupérer les IDs des groupes dans le document User
@@ -73,8 +104,6 @@ class DatabaseManager {
       // 3. Transformer en liste de Future<Group>
       Iterable<Future<Group>> groupFutures = groupSnapshots.docs.map((doc) async {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-
-        // On récupère les messages pour ce groupe spécifique
         List<Message> messages = await getGroupMessages(doc.id);
 
         return Group(
@@ -84,7 +113,7 @@ class DatabaseManager {
           messages,
         );
       });
-
+      //print(await Future.wait(groupFutures));
       // 4. On attend que TOUS les groupes soient chargés avant de retourner la liste
       return await Future.wait(groupFutures);
 
@@ -106,8 +135,8 @@ class DatabaseManager {
       Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
       return Message(
         doc.id,
-        data['text'],
         data['senderId'],
+        data['text'],
         (data['timestamp'] as Timestamp),
       );
     }).toList();
@@ -215,13 +244,21 @@ class DatabaseManager {
   }
 
   Future<void> deleteMessage(String groupId, String senderId, String messageId) async {
-    final batch = _db.batch();
+    print("DELTE : $messageId");
     if(senderId == FirebaseAuth.instance.currentUser!.uid) {
-      batch.update(_db.collection('groups').doc(groupId), {
-        'messages': FieldValue.arrayRemove([messageId])
-      });
+      try {
+        DocumentReference messageRef = _db
+            .collection('groups')
+            .doc(groupId)
+            .collection('messages')
+            .doc(messageId);
 
-      await batch.commit();
+        // Suppression du document
+        await messageRef.delete();
+      } catch (e) {
+        print("Erreur lors de la suppression du message : $e");
+        rethrow;
+      }
     }
   }
 }

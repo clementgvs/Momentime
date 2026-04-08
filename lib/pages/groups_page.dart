@@ -89,7 +89,13 @@ class _GroupsPageState extends State<GroupsPage> {
                         child: ListTile(
                           title: Text(currentGroup.name),
                           trailing: Text(snapshot.data?.join(", ") ?? "Aucun membre"),
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroupPage(group: currentGroup))),
+                          onTap: () async {
+                            final isLeaving = await Navigator.push(context, MaterialPageRoute(builder: (_) => GroupPage(group: currentGroup)));
+                            print(isLeaving);
+                            if(isLeaving) {
+                              await _loadGroups();
+                            }
+                          },
                         ),
                       ),
                     );
