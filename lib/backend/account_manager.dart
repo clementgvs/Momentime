@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 
+import 'database_manager.dart';
+
 class AccountManager {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instanceFor(
@@ -41,6 +43,67 @@ class AccountManager {
     } else {
       return "Utilisateur introuvable";
     }
+  }
+
+  Future<void> deleteAccount() async {
+    User? user = _auth.currentUser;
+    if (user == null) throw "Aucun utilisateur connecté.";
+
+    try {
+      String uid = user.uid;
+
+      // 1. Récupérer la liste des groupes de l'utilisateur pour les quitter proprement
+      DocumentSnapshot userDoc = await _db.collection('users').doc(uid).get();
+
+      if (userDoc.exists) {
+        List<dynamic> groupIds = userDoc.get('groups') ?? [];
+
+        // 2. Faire quitter l'utilisateur de chaque groupe
+        // On utilise DatabaseManager().leaveGroup pour gérer la logique de suppression du groupe si vide
+        for (String groupId in groupIds) {
+          await DatabaseManager().leaveGroup(groupId, uid);
+        }
+
+        // 3. Supprimer les sous-collections (comme 'events')
+        // Note: Firestore ne supprime pas automatiquement les sous-collections d'un doc supprimé
+        QuerySnapshot events = await _db.collection('users').doc(uid).collection('events').get();
+        for (var doc in events.docs) {
+          await doc.reference.delete();
+        }
+
+        // 4. Supprimer le document utilisateur dans Firestore
+        await _db.collection('users').doc(uid).delete();
+      }
+
+      // 5. Enfin, supprimer l'utilisateur de Firebase Authentication
+      await user.delete();
+
+      print("Compte supprimé avec succès.");
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        throw "Cette action nécessite une reconnexion récente.";
+      }
+      rethrow;
+    } catch (e) {
+      print("Erreur lors de la suppression du compte : $e");
+      rethrow;
+    }
+  }
+
+  Future<void> updateUsername(String newUsername) async {
+    User? user = _auth.currentUser;
+    if (user == null) return;
+
+    // Vérifier si le pseudo est déjà pris
+    final snapshot = await _db.collection('users')
+        .where('username', isEqualTo: newUsername).get();
+
+    if (snapshot.docs.isNotEmpty) throw "Ce nom d'utilisateur est déjà pris.";
+
+    // Mise à jour du document
+    await _db.collection('users').doc(user.uid).update({
+      'username': newUsername,
+    });
   }
 
   bool listContainsIgnoreCase(List<String>? list, String s) {

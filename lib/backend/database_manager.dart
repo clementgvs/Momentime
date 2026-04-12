@@ -4,10 +4,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:momentime/models/event.dart';
 import 'package:momentime/models/group.dart';
+import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import '../models/message.dart';
+import 'account_manager.dart';
 
 class DatabaseManager {
   final FirebaseFirestore _db = FirebaseFirestore.instanceFor(
@@ -49,6 +52,28 @@ class DatabaseManager {
       print("Erreur récupération events : $e");
       return [];
     }
+  }
+
+  Future<List<Appointment>> getGroupAppointments(List<String> memberIds) async {
+    List<Appointment> allAppointments = [];
+
+    for (String uid in memberIds) {
+      // Récupérer le nom pour savoir qui est occupé
+      String name = await AccountManager().getUsernameFromId(uid);
+      // Récupérer les events réels de la personne
+      List<Event> userEvents = await getEventList(uid);
+
+      for (var e in userEvents) {
+        allAppointments.add(Appointment(
+          startTime: e.from,
+          endTime: e.to,
+          subject: "$name est occupé(e)",
+          color: Colors.red.withOpacity(0.6), // Rouge pour l'indisponibilité
+          isAllDay: e.isAllDay,
+        ));
+      }
+    }
+    return allAppointments;
   }
 
   Future<void> removeEvent(String userUid, String eventId) {

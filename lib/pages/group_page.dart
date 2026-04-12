@@ -5,6 +5,7 @@ import 'package:momentime/models/group.dart';
 import 'package:momentime/models/message.dart';
 
 import '../backend/account_manager.dart';
+import 'group_calendar-page.dart';
 
 class GroupPage extends StatefulWidget {
   final Group group;
@@ -21,7 +22,6 @@ class _GroupPageState extends State<GroupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // --- 1. BARRE DU HAUT ---
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -40,15 +40,15 @@ class _GroupPageState extends State<GroupPage> {
           ],
         ),
         actions: [
-          // Bouton Calendrier
           IconButton(
             icon: const Icon(Icons.calendar_month),
             onPressed: () {
-              print("Ouvrir le calendrier du groupe");
-              // Ta future logique calendrier ici
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => GroupCalendarPage(group: widget.group)),
+              );
             },
           ),
-          // Bouton Options / Détails / Ajouter membres
           IconButton(
             icon: const Icon(Icons.more_vert),
             onPressed: () {
@@ -58,7 +58,6 @@ class _GroupPageState extends State<GroupPage> {
         ],
       ),
 
-      // --- 2. LISTE DES MESSAGES ---
       body: Column(
         children: [
           Expanded(
@@ -66,7 +65,7 @@ class _GroupPageState extends State<GroupPage> {
               widget.group.messages.isEmpty ?
               const Center(child: Text("No message for the moment.")) :
               ListView.builder(
-              reverse: true, // Pour que les derniers messages soient en bas
+              reverse: true,
               itemCount: widget.group.messages.length,
               itemBuilder: (context, index) {
                 final msg = widget.group.messages.toList()[index];
@@ -75,14 +74,12 @@ class _GroupPageState extends State<GroupPage> {
             ),
           ),
 
-          // --- 3. BARRE D'ENVOI ---
           _buildMessageInput(),
         ],
       ),
     );
   }
 
-  // Widget pour le champ de texte en bas
   Widget _buildMessageInput() {
     return Container(
       padding: const EdgeInsets.all(8.0),
@@ -200,12 +197,6 @@ class _GroupPageState extends State<GroupPage> {
                 ),
               ),
             ),
-            if(message.senderId == FirebaseAuth.instance.currentUser!.uid)
-              ListTile(
-                leading: const Icon(Icons.edit),
-                title: const Text("Edit"),
-                onTap: () => Navigator.pop(context, true), //TODO
-              ),
             if(message.senderId == FirebaseAuth.instance.currentUser!.uid)
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red,),
