@@ -12,7 +12,10 @@ class _LoginPageState extends State<LoginPage> {
   bool isLogin = true;
   String username = "";
   String email = "";
+  String emailConfirm = "";
   String password = "";
+  String passwordConfirm = "";
+  bool isRegisterUsernameTaken = false;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +42,11 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
             TextButton(
-                onPressed: () => AccountManager().signIn(email, password),
+                onPressed: () {
+                  if(email.isNotEmpty && password.isNotEmpty){
+                    AccountManager().signIn(email, password);
+                  }
+                },
                 child: Text("Login")
             ),
             TextButton(
@@ -63,38 +70,56 @@ class _LoginPageState extends State<LoginPage> {
               height: 100,
             ),
             TextField(
-              onChanged: (value) => setState(() => username=value),
+              onChanged: (value) async {
+                isRegisterUsernameTaken = await AccountManager().isUsernameTaken(value);
+                setState(()  => username=value);
+              },
               decoration: InputDecoration(
                 hintText: 'Username',
               ),
             ),
+            if(isRegisterUsernameTaken)
+              Text("Username déjà pris"),
             TextField(
+              onChanged: (value) => setState(() => email=value),
               decoration: InputDecoration(
                 hintText: 'E-mail',
               ),
             ),
             TextField(
-              onChanged: (value) => setState(() => email=value),
+              onChanged: (value) => setState(() => emailConfirm=value),
               decoration: InputDecoration(
                 hintText: 'Confirm E-mail',
               ),
             ),
+            if(email!=emailConfirm && email.isNotEmpty && emailConfirm.isNotEmpty)
+              Text("Les e-mails ne correspondent pas."),
             TextField(
+              onChanged: (value) => setState(() => password=value),
               obscureText: true,
               decoration: InputDecoration(
                 hintText: 'Password',
               ),
             ),
             TextField(
-              onChanged: (value) => setState(() => password=value),
+              onChanged: (value) => setState(() => passwordConfirm=value),
               obscureText: true,
               decoration: InputDecoration(
                 hintText: 'Confirm password',
               ),
             ),
+            if(password!=passwordConfirm && password.isNotEmpty && passwordConfirm.isNotEmpty)
+              Text("Les mots de passe correspondent pas."),
             TextButton(
-                onPressed: () => AccountManager().signUp(email=email, password=password, username=username),
-                child: Text("Register")
+              onPressed: () {
+                if(password==passwordConfirm
+                    && password.isNotEmpty
+                    && passwordConfirm.isNotEmpty
+                    && !isRegisterUsernameTaken) {
+                  AccountManager().signUp(email=email, password=password, username=username);
+                }
+              },
+              child: Text("Register")
             ),
             TextButton(
                 onPressed: () => setState(() {

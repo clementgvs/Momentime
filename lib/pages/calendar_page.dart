@@ -1,10 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:momentime/backend/account_manager.dart';
 import 'package:momentime/backend/database_manager.dart';
 import 'package:momentime/backend/events_manager.dart';
 import 'package:momentime/models/event.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
+
+import '../backend/calendar_sync_manager.dart';
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
@@ -16,6 +17,7 @@ class CalendarPage extends StatefulWidget {
 class _CalendarPageState extends State<CalendarPage> {
   late Event event;
   List<Event> events = [];
+  final CalendarSyncManager _syncManager = CalendarSyncManager();
   User? currentUser = FirebaseAuth.instance.currentUser;
 
   Future<void> addEvent(BuildContext context, Event event) async {
@@ -60,12 +62,30 @@ class _CalendarPageState extends State<CalendarPage> {
     });
   }
 
+  void _handleSync() async {
+    final systemEvents = await _syncManager.fetchSystemEvents();
+
+    setState(() {
+      for (var newEvent in systemEvents) {
+        if (!events.any((e) => e.id == newEvent.id)) {
+          events.add(newEvent);
+        }
+      }
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("${systemEvents.length} événements synchronisés")),
+      );
+    }
+  }
+
   Future<void> _loadEvents() async {
     String uid = FirebaseAuth.instance.currentUser!.uid;
     List<Event> fetchedEvents = await DatabaseManager().getEventList(uid);
 
     setState(() {
-      events = fetchedEvents;
+      events.addAll(fetchedEvents);
     });
   }
 
@@ -96,6 +116,8 @@ class _CalendarPageState extends State<CalendarPage> {
           Padding(
             padding: EdgeInsetsGeometry.directional(start: 15, end: 15, bottom: 0, top: 0),
             child: SfCalendar(
+              initialDisplayDate: DateTime.now(),
+              initialSelectedDate: DateTime.now(),
               view: CalendarView.month,
               monthViewSettings: MonthViewSettings(
                 showAgenda: true,
@@ -157,7 +179,7 @@ class _CalendarPageState extends State<CalendarPage> {
           ),
           Positioned(
             bottom: 16,
-            right: 16,
+            left: 16,
             child: FloatingActionButton(
               onPressed: () => showDialog(
                 context: context,
@@ -213,6 +235,15 @@ class _CalendarPageState extends State<CalendarPage> {
               ),
               shape: CircleBorder(),
               child: Icon(Icons.add),
+            ),
+          ),
+          Positioned(
+            bottom: 90,
+            left: 16,
+            child: FloatingActionButton(
+              onPressed: () => _handleSync(),
+              shape: CircleBorder(),
+              child: Icon(Icons.sync),
             ),
           ),
         ],

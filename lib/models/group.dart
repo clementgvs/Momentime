@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:momentime/models/message.dart';
 
 class Group{

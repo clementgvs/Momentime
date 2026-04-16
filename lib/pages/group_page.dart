@@ -119,9 +119,8 @@ class _GroupPageState extends State<GroupPage> {
     );
   }
 
-  // Widget pour une bulle de message (Design basique)
+  // Widget pour une bulle de message
   Widget _buildMessageBubble(Message message) {
-    // On définit le futur à attendre
     return FutureBuilder<String>(
       future: fetchUsername(message.senderId),
       builder: (context, snapshot) {
@@ -215,16 +214,14 @@ class _GroupPageState extends State<GroupPage> {
     );
   }
 
-  // Fonction pour afficher le menu d'options
   void _showGroupOptions(BuildContext context) async {
-    TextEditingController usernameController = TextEditingController();
-    List<String> idsToAdd = List.empty(growable: true);
     Map<String, String> searchedMap = await AccountManager().searchUsersFromUsername("");
-    List<MapEntry<String, String>> userEntries = searchedMap.entries.toList();
-
     showModalBottomSheet(
       context: context,
       builder: (context) {
+        TextEditingController usernameController = TextEditingController();
+        List<String> idsToAdd = List.empty(growable: true);
+        List<MapEntry<String, String>> userEntries = searchedMap.entries.toList();
         return Wrap(
           children: [
             ListTile(
@@ -232,90 +229,90 @@ class _GroupPageState extends State<GroupPage> {
               title: const Text("Add members"),
               onTap: () => showDialog(
                 context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Add members'),
-                  content: SizedBox( // On fixe une largeur/hauteur globale pour l'AlertDialog
-                    width: double.maxFinite,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min, // La colonne prend le minimum de place
-                      children: [
-                        TextField(
-                          controller: usernameController,
-                          onChanged: (value) async {
-                            searchedMap = await AccountManager().searchUsersFromUsername(value);
-                            setState(() {
-                              userEntries = searchedMap.entries.toList();
-                            });
-                          },
-                          decoration: const InputDecoration(hintText: 'Search a username...'),
-                        ),
-                        const SizedBox(height: 10),
-                        // On donne une hauteur fixe ou flexible à la liste de résultats
-                        ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxHeight: 250, // Hauteur max de la liste de recherche
+                builder: (context) => StatefulBuilder(
+                  builder: (context, StateSetter setDialogState) => AlertDialog(
+                    title: const Text('Add members'),
+                    content: SizedBox(
+                      width: double.maxFinite,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextField(
+                            controller: usernameController,
+                            onChanged: (value) async {
+                              searchedMap = await AccountManager().searchUsersFromUsername(value);
+                              setDialogState(() {
+                                userEntries = searchedMap.entries.toList();
+                              });
+                            },
+                            decoration: const InputDecoration(hintText: 'Search a username...'),
                           ),
-                          child: userEntries.isEmpty
-                              ? const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Text("No user found"),
-                          )
-                              : ListView.builder(
-                            shrinkWrap: true, // Important à l'intérieur d'une Column
-                            itemCount: userEntries.length,
-                            itemBuilder: (context, index) {
-                              final String userId = userEntries[index].key;
-                              final String username = userEntries[index].value;
-
-                              return ListTile(
-                                dense: true, // Plus compact pour un Dialog
-                                leading: CircleAvatar(child: Text(username[0])),
-                                title: Text(username),
-                                onTap: () {
-                                  if (idsToAdd.contains(userId)) {
-                                    idsToAdd.remove(userId);
-                                  } else {
-                                    idsToAdd.add(userId);
-                                  }
-                                  setState(() {});
-                                },
-                                trailing: Checkbox(
-                                  value: idsToAdd.contains(userId),
-                                  onChanged: (bool? checked) {
-                                    if (checked == true) {
-                                      idsToAdd.add(userId);
-                                    } else {
+                          const SizedBox(height: 10),
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxHeight: 250,
+                            ),
+                            child: userEntries.isEmpty
+                                ? const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text("No user found"),
+                            )
+                                : ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: userEntries.length,
+                              itemBuilder: (context, index) {
+                                final String userId = userEntries[index].key;
+                                final String username = userEntries[index].value;
+                                return ListTile(
+                                  dense: true,
+                                  leading: CircleAvatar(child: Text(username[0])),
+                                  title: Text(username),
+                                  onTap: () {
+                                    if (idsToAdd.contains(userId)) {
                                       idsToAdd.remove(userId);
+                                    } else {
+                                      idsToAdd.add(userId);
                                     }
                                     setState(() {});
                                   },
-                                ),
-                              );
-                            },
+                                  trailing: Checkbox(
+                                    value: idsToAdd.contains(userId),
+                                    onChanged: (bool? checked) {
+                                      if (checked == true) {
+                                        idsToAdd.add(userId);
+                                      } else {
+                                        idsToAdd.remove(userId);
+                                      }
+                                      setState(() {});
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () async {
-                        Navigator.pop(context, true);
-                        for(String id in idsToAdd) {
-                          if(!widget.group.members.contains(id)) {
-                            await DatabaseManager().addUserToGroup(widget.group.id, id);
+                    actions: [
+                      TextButton(
+                        onPressed: () async {
+                          Navigator.pop(context, true);
+                          for(String id in idsToAdd) {
+                            if(!widget.group.members.contains(id)) {
+                              await DatabaseManager().addUserToGroup(widget.group.id, id);
+                            }
                           }
-                        }
-                        await DatabaseManager().getGroupList(FirebaseAuth.instance.currentUser!.uid);
-                        setState(() {});
-                      },
-                      child: Text('Add'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: Text('Cancel'),
-                    ),
-                  ],
+                          await DatabaseManager().getGroupList(FirebaseAuth.instance.currentUser!.uid);
+                          setState(() {});
+                        },
+                        child: Text('Add'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: Text('Cancel'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
