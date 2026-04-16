@@ -38,6 +38,10 @@ dependencies:
   firebase_core: ^4.4.0
   firebase_auth: any
   cloud_firestore: any
+  device_calendar: ^4.3.2
+
+dependency_overrides:
+  timezone: ^0.11.0
 
 dev_dependencies:
   flutter_test:

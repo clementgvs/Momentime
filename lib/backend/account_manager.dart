@@ -13,6 +13,12 @@ class AccountManager {
 
   Stream<User?> get userStatus => _auth.authStateChanges();
 
+  Future<bool> isUsernameTaken(String username) async {
+    final snapshot = await _db.collection('users')
+        .where('username', isEqualTo: username).get();
+    return snapshot.docs.isNotEmpty;
+  }
+
   Future<void> signUp(String email, String password, String username) async {
     final snapshot = await _db.collection('users')
         .where('username', isEqualTo: username).get();
@@ -117,10 +123,7 @@ class AccountManager {
     try {
       dynamic querySnapshot;
       if(search.isEmpty) {
-        querySnapshot = await _db
-            .collection('users')
-            .where('username', isNull: false)
-            .get();
+        return ids;
       }else {
         querySnapshot = await _db
             .collection('users')
