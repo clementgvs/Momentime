@@ -167,7 +167,7 @@ class _CalendarPageState extends State<CalendarPage> {
                       ),
                       const Expanded(child: SizedBox(height: 2)),
                       Text(
-                        "${event.from.toString().split('.')[0]} >>> ${event.to.toString().split('.')[0]}",
+                        formatEventDates(event),
                         style: const TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                     ],
@@ -248,5 +248,40 @@ class _CalendarPageState extends State<CalendarPage> {
         ],
       ),
     );
+  }
+
+  String formatEventDates(Event event) {
+    DateTime from = event.from;
+    DateTime to = event.to;
+    final now = DateTime.now();
+
+    bool isSameDay = from.year == to.year && from.month == to.month && from.day == to.day;
+    bool isSameMonth = from.year == to.year && from.month == to.month;
+    bool isSameYear = from.year == to.year;
+    bool isCurrentYear = from.year == now.year && to.year == now.year;
+
+    String hour(DateTime dt) => "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+    String day(DateTime dt) => "${dt.day}";
+    String month(DateTime dt) => _getMonthName(dt.month);
+    String fullDate(DateTime dt, {bool includeYear = true}) {
+      return "${dt.day} ${month(dt)}${includeYear ? ' ${dt.year}' : ''}";
+    }
+
+    if (isSameDay) {
+      return "${hour(from)} - ${hour(to)}";
+    }
+    else if (isSameMonth) {
+      return "${day(from)} ${month(from)} (${hour(from)}) - ${day(to)} ${month(to)} (${hour(to)})";
+    }
+    else if (isSameYear) {
+      return "${fullDate(from, includeYear: false)} - ${fullDate(to, includeYear: !isCurrentYear)}";
+    }else {
+      return "${fullDate(from)} - ${fullDate(to)}";
+    }
+  }
+
+  String _getMonthName(int month) {
+    const months = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    return months[month - 1];
   }
 }

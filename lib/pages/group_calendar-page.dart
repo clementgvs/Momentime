@@ -49,10 +49,14 @@ class _GroupCalendarPageState extends State<GroupCalendarPage> {
         ),
         monthCellBuilder: (context, details) {
           final bool isBusy = _groupAppointments.any((app) {
+            final duration = app.endTime.difference(app.startTime);
+
+            if (duration.inMinutes < 15) return false;
+
             final date = DateTime(details.date.year, details.date.month, details.date.day);
             final start = DateTime(app.startTime.year, app.startTime.month, app.startTime.day);
             final end = DateTime(app.endTime.year, app.endTime.month, app.endTime.day);
-            if(start.compareTo(end) == 0) return false;
+
             return (date.isAtSameMomentAs(start) || date.isAtSameMomentAs(end)) ||
                 (date.isAfter(start) && date.isBefore(end));
           });
