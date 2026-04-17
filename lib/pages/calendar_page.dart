@@ -65,19 +65,18 @@ class _CalendarPageState extends State<CalendarPage> {
   void _handleSync() async {
     final systemEvents = await _syncManager.fetchSystemEvents();
 
-    setState(() {
-      for (var newEvent in systemEvents) {
-        if (!events.any((e) => e.id == newEvent.id)) {
-          events.add(newEvent);
-        }
+    for (var newEvent in systemEvents) {
+      if (!events.any((e) => (e.name == newEvent.name && e.from == newEvent.from && e.to == newEvent.to))) {
+        await DatabaseManager().addEvent(currentUser!.uid, newEvent);
       }
-    });
+    }
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("${systemEvents.length} événements synchronisés")),
+        SnackBar(content: Text("${systemEvents.length} événements trouvés")),
       );
     }
+    _loadEvents();
   }
 
   Future<void> _loadEvents() async {
@@ -85,7 +84,7 @@ class _CalendarPageState extends State<CalendarPage> {
     List<Event> fetchedEvents = await DatabaseManager().getEventList(uid);
 
     setState(() {
-      events.addAll(fetchedEvents);
+      events = fetchedEvents;
     });
   }
 
