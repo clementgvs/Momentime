@@ -207,6 +207,26 @@ class DatabaseManager {
     }
   }
 
+  Stream<List<Message>> getGroupMessagesStream(String groupId) {
+    return _db
+        .collection('groups')
+        .doc(groupId)
+        .collection('messages')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        Map<String, dynamic> data = doc.data();
+        return Message(
+          doc.id,
+          data['senderId'],
+          data['text'],
+          (data['timestamp'] as Timestamp? ?? Timestamp.now()),
+        );
+      }).toList();
+    });
+  }
+
   Future<void> leaveGroup(String groupId, String userId) async {
     try {
       DocumentReference groupRef = _db.collection('groups').doc(groupId);

@@ -61,19 +61,31 @@ class _GroupPageState extends State<GroupPage> {
       body: Column(
         children: [
           Expanded(
-            child:
-              widget.group.messages.isEmpty ?
-              const Center(child: Text("No message for the moment.")) :
-              ListView.builder(
-              reverse: true,
-              itemCount: widget.group.messages.length,
-              itemBuilder: (context, index) {
-                final msg = widget.group.messages.toList()[index];
-                return _buildMessageBubble(msg);
+            child: StreamBuilder<List<Message>>(
+              stream: DatabaseManager().getGroupMessagesStream(widget.group.id),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) return const Center(child: Text("Error loading messages"));
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final messages = snapshot.data ?? [];
+
+                if (messages.isEmpty) {
+                  return const Center(child: Text("No message for the moment."));
+                }
+
+                return ListView.builder(
+                  reverse: true,
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final msg = messages[index];
+                    return _buildMessageBubble(msg);
+                  },
+                );
               },
             ),
           ),
-
           _buildMessageInput(),
         ],
       ),
@@ -103,13 +115,9 @@ class _GroupPageState extends State<GroupPage> {
               icon: const Icon(Icons.send, color: Colors.blue),
               onPressed: () async {
                 if (_messageController.text.isNotEmpty) {
-                  print("Envoi de : ${_messageController.text}");
-                  await DatabaseManager().sendMessage(widget.group.id, FirebaseAuth.instance.currentUser!.uid, _messageController.text);
-                  //widget.group.messages.add(Message("0", FirebaseAuth.instance.currentUser!.uid, _messageController.text, Timestamp.fromDate(DateTime.now())));
-                  _messageController.clear();
-
-                  widget.group.messages = await DatabaseManager().getGroupMessages(widget.group.id);
-                  setState(() {});
+                  String text = _messageController.text;
+                  _messageController.clear(); // On vide tout de suite pour l'UX
+                  await DatabaseManager().sendMessage(widget.group.id, FirebaseAuth.instance.currentUser!.uid, text);
                 }
               },
             ),
@@ -201,11 +209,8 @@ class _GroupPageState extends State<GroupPage> {
                 leading: const Icon(Icons.delete, color: Colors.red,),
                 title: const Text("Delete", style: TextStyle(color: Colors.red)),
                 onTap: () async {
-                  Navigator.pop(context, true);
+                  Navigator.pop(context);
                   await DatabaseManager().deleteMessage(widget.group.id, FirebaseAuth.instance.currentUser!.uid, message.id);
-
-                  widget.group.messages = await DatabaseManager().getGroupMessages(widget.group.id);
-                  setState(() {});
                 },
               ),
           ],
