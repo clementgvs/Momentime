@@ -49,20 +49,22 @@ class DefaultFirebaseOptions {
     }
   }
 
+  /*
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBQZMMhU4Ioyq0uRFFg8ytOfdETqxDCEZk',
-    appId: '1:633608349785:android:ffa0a8c6498f4774f5a948',
-    messagingSenderId: '633608349785',
+    apiKey: '',
+    appId: '',
+    messagingSenderId: '',
     projectId: 'momentime-main',
     storageBucket: 'momentime-main.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDhbvF5a59p4PYCIskWMWBTtVJTKoRSN4Q',
-    appId: '1:633608349785:ios:4384305152344b23f5a948',
-    messagingSenderId: '633608349785',
+    apiKey: '',
+    appId: '',
+    messagingSenderId: '',
     projectId: 'momentime-main',
     storageBucket: 'momentime-main.firebasestorage.app',
     iosBundleId: 'fr.clementgvs.momentime',
   );
+  */
 }
