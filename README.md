@@ -12,11 +12,11 @@
   <a href="https://github.com/clementgvs/Momentime/releases">
     <img src="https://img.shields.io/github/v/release/clementgvs/Momentime?style=for-the-badge" alt="Latest release">
   </a>
+  -->
   <a href="https://github.com/clementgvs/Momentime/stargazers">
     <img src="https://img.shields.io/github/stars/clementgvs/Momentime?style=for-the-badge" alt="GitHub stars">
   </a>
 </p>
--->
 
 **Momentime** is a Flutter mobile app for planning activities and comparing availability with friends. It combines a personal calendar with shared group calendars and real-time group conversations.
 
